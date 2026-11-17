@@ -1,0 +1,67 @@
+---
+import type { PresentedEvent } from '../lib/present';
+
+interface Props {
+  event: PresentedEvent;
+  months: string;
+}
+
+const { event, months } = Astro.props;
+const style = `--accent:${event.paint.accent};--accent-ink:${event.paint.accentInk};--solid:${event.paint.solid};--on-solid:${event.paint.onSolid}`;
+---
+
+<article
+  id={event.id}
+  class="card"
+  style={style}
+  tabindex="-1"
+  data-event
+  data-start={event.start}
+  data-end={event.end}
+  data-months={months}
+  data-tipo={event.tipo}
+  data-force-status={event.forceLive ? 'live' : undefined}
+  aria-labelledby={`title-${event.id}`}
+>
+  <div
+    class:list={['preview-frame', { 'is-contain': event.imageFit === 'contain' }]}
+    style={event.image && event.imageFit === 'contain' ? `--poster:url("${event.image}")` : undefined}
+  >
+    {
+      event.image ? (
+        <img class="preview" src={event.image} alt="" decoding="async" />
+      ) : (
+        <div class="preview preview-placeholder" aria-hidden="true">
+          <span>{event.chip}</span>
+        </div>
+      )
+    }
+  </div>
+  <div class="card-body">
+    <div class="card-top">
+      <span class="badge">{event.number}</span>
+      <h3 id={`title-${event.id}`}>{event.title}</h3>
+      <p class="state" data-state>Próximo</p>
+    </div>
+    <p class="organizer">{event.organizer}</p>
+    <div class="facts">
+      <p class="date-label">{event.dateLabel}</p>
+      <p class="time-label">{event.timeLabel}</p>
+      <p class="venue">{event.venue}</p>
+      {event.showDetail ? <p class="detail">{event.detail}</p> : null}
+    </div>
+    {
+      event.url ? (
+        <div class="actions">
+          <a class="register" href={event.url} target="_blank" rel="noopener noreferrer">
+            Registrarme
+            <span class="sr-only"> en {event.title}, se abre en otra pestaña</span>
+          </a>
+          {event.qr ? <div class="qr" aria-hidden="true" set:html={event.qr} /> : null}
+        </div>
+      ) : (
+        <p class="pending">Enlace por confirmar</p>
+      )
+    }
+  </div>
+</article>

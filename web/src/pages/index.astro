@@ -1,0 +1,527 @@
+---
+import Base from '../layouts/Base.astro';
+import EventCard from '../components/EventCard.astro';
+import MonthCalendar from '../components/MonthCalendar.astro';
+import { buildSpan, eventMonthKeys, mexicoToday, monthEventIds } from '../lib/calendar';
+import { loadEvents } from '../lib/events';
+import { presentEvents } from '../lib/present';
+
+const source = loadEvents();
+const today = mexicoToday(source.timezone);
+const events = await presentEvents(source.events);
+const span = buildSpan(events, today);
+const months = span.map((item) => ({
+  ...item,
+  ids: monthEventIds(item.calendar),
+}));
+const defaultMonth = today.key.slice(0, 7);
+const defaultMonthTitle = new Intl.DateTimeFormat('es-MX', { month: 'long', timeZone: 'UTC' })
+  .format(new Date(Date.UTC(today.year, today.month - 1, 1, 12)))
+  .toLocaleUpperCase('es-MX');
+const first = span[0];
+const last = span[span.length - 1];
+const capitalize = (label: string) => label.charAt(0).toLocaleUpperCase('es-MX') + label.slice(1);
+const spanLabel = `${capitalize(first.calendar.monthLabel)} ${first.year} — ${capitalize(last.calendar.monthLabel)} ${last.year}`;
+const title = 'Agenda del ecosistema · Puebla';
+const description =
+  'Agenda de tecnología, ciencia, videojuegos, innovación y emprendimiento en Puebla. Un mes a la vez, o los 12 meses desde el anterior.';
+---
+
+<Base title={title} description={description} timezone={source.timezone}>
+  <main
+    class="page is-mes"
+    data-page
+    data-default-month={defaultMonth}
+    data-window={months.map((item) => item.key).join(' ')}
+    data-span-label={spanLabel}
+  >
+    <header class="masthead">
+      <div class="masthead-top">
+        <p class="kicker">AGENDA DEL ECOSISTEMA · PUEBLA</p>
+        <button type="button" class="today-pill" data-today-jump aria-label={`Hoy, ${today.weekdaySpoken} ${today.day}. Ir al día de hoy`}>
+          <span class="today-flag">HOY</span>
+          <span aria-hidden="true">·</span>
+          <span data-today-when>{today.weekdayVisible} {today.day}</span>
+        </button>
+      </div>
+      <h1 data-heading>
+        <span class="month" data-heading-main>{defaultMonthTitle}</span>
+        <span class="year" data-heading-year>{today.year}</span>
+      </h1>
+      <p class="subtitle" data-subtitle>Tecnología · innovación · emprendimiento</p>
+      <nav class="pager" aria-label="Cambiar de mes o ver los 12 meses">
+        <a data-step="-1" href="?vista=mes">Mes anterior</a>
+        <a data-vista-toggle href="?vista=ano">Ver año</a>
+        <a data-step="1" href="?vista=mes">Mes siguiente</a>
+      </nav>
+    </header>
+
+    <div class="months">
+      {
+        months.map(({ calendar, key, ids }) => (
+          <section class="month-block" data-month-key={key} data-month={ids.join(' ')} hidden={key !== defaultMonth}>
+            <h2 class="month-title">
+              <a class="month-open" data-open-month={key} href={`?vista=mes&mes=${key}`}>
+                <span class="month">{calendar.monthTitle}</span>
+                <span class="year">{calendar.year}</span>
+              </a>
+            </h2>
+            <MonthCalendar calendar={calendar} transitionKey={key} />
+          </section>
+        ))
+      }
+    </div>
+
+    <section class="register-section" id="registro" aria-labelledby="registro-title">
+      <div class="section-head">
+        <h2 id="registro-title">ESCANEA Y REGÍSTRATE</h2>
+      </div>
+      <div class="list-tools">
+        <nav class="filters" aria-label="Filtrar por momento">
+          <a href="?estado=pasados" data-filter="pasados">Pasados</a>
+          <a href="?estado=proximos" data-filter="proximos">Próximos</a>
+          <a href="?estado=live" data-filter="live">En vivo</a>
+        </nav>
+        <nav class="formats" aria-label="Forma de las tarjetas">
+          <a href="?formato=cartel" data-formato="cartel">Cartel</a>
+          <a href="?formato=lista" data-formato="lista">Lista</a>
+        </nav>
+        <nav class="types" aria-label="Filtrar por tipo de evento">
+          <a href="?" data-tipo-filter="todos">Todos</a>
+          <a href="?tipo=conferencia" data-tipo-filter="conferencia">Conferencia</a>
+          <a href="?tipo=hackaton" data-tipo-filter="hackaton">Hackatón</a>
+          <a href="?tipo=taller" data-tipo-filter="taller">Taller</a>
+          <a href="?tipo=meetup" data-tipo-filter="meetup">Meetup</a>
+          <a href="?tipo=concurso" data-tipo-filter="concurso">Concurso</a>
+          <a href="?tipo=feria" data-tipo-filter="feria">Expo</a>
+        </nav>
+      </div>
+      <div class="empty" data-empty hidden>
+        <p class="empty-kicker" data-empty-kicker>Agenda</p>
+        <h3 class="empty-title" data-empty-title>No hay eventos en esta vista.</h3>
+        <p class="empty-note">El calendario de arriba sigue con todo el mes.</p>
+        <div class="empty-actions">
+          <a class="empty-clear" data-empty-jump data-empty-clear href="?">Ver todos los tipos</a>
+          <a class="empty-time" data-empty-jump data-empty-time href="?">Ver pasados</a>
+        </div>
+      </div>
+      <div class="cards">
+        {events.map((event) => (
+          <EventCard event={event} months={eventMonthKeys(event.start, event.end).join(' ')} />
+        ))}
+      </div>
+    </section>
+
+    <footer class="colophon">
+      <p data-count>{events.length} encuentros para conectar, aprender y construir. Horarios CDMX · UTC−6.</p>
+    </footer>
+  </main>
+  <noscript>
+    <style>
+      html.agenda-booting .cards,
+      .month-block[hidden] {
+        display: block !important;
+        visibility: visible;
+      }
+    </style>
+  </noscript>
+  <script is:inline>
+    (function () {
+      var page = document.querySelector('[data-page]');
+      if (!page) return;
+      var zone = document.documentElement.getAttribute('data-timezone') || 'America/Mexico_City';
+      var windowKeys = (page.getAttribute('data-window') || '').split(' ').filter(Boolean);
+      var defaultMonth = page.getAttribute('data-default-month') || windowKeys[0];
+      var spanLabel = page.getAttribute('data-span-label') || '';
+      var labels = { proximos: 'Próximo', live: 'En vivo', pasados: 'Pasado' };
+      var validTipos = ['conferencia', 'hackaton', 'taller', 'meetup', 'concurso', 'feria'];
+      var tipoEmpty = {
+        todos: { noun: 'eventos', next: 'próximos', past: 'pasados' },
+        conferencia: { noun: 'conferencias', next: 'próximas', past: 'pasadas' },
+        hackaton: { noun: 'hackatones', next: 'próximos', past: 'pasados' },
+        taller: { noun: 'talleres', next: 'próximos', past: 'pasados' },
+        meetup: { noun: 'meetups', next: 'próximos', past: 'pasados' },
+        concurso: { noun: 'concursos', next: 'próximos', past: 'pasados' },
+        feria: { noun: 'expos', next: 'próximas', past: 'pasadas' }
+      };
+      var tipoLabel = {
+        todos: 'Todos',
+        conferencia: 'Conferencia',
+        hackaton: 'Hackatón',
+        taller: 'Taller',
+        meetup: 'Meetup',
+        concurso: 'Concurso',
+        feria: 'Expo'
+      };
+      var estadoLabel = { proximos: 'Próximos', live: 'En vivo', pasados: 'Pasados' };
+      var monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var supportsTypes = false;
+      try { supportsTypes = CSS.supports('selector(:active-view-transition-type(zoom-in))'); } catch (error) { supportsTypes = false; }
+      var tagline = 'Tecnología · innovación · emprendimiento';
+
+      function pad(value) { return String(value).padStart(2, '0'); }
+
+      function shiftMonth(key, delta) {
+        var parts = key.split('-');
+        var year = Number(parts[0]);
+        var month = Number(parts[1]) + delta;
+        while (month < 1) { month += 12; year -= 1; }
+        while (month > 12) { month -= 12; year += 1; }
+        return year + '-' + pad(month);
+      }
+
+      function inWindow(key) { return windowKeys.indexOf(key) !== -1; }
+
+      function read() {
+        var params = new URLSearchParams(location.search);
+        var vista = params.get('vista') === 'ano' ? 'ano' : 'mes';
+        var mes = params.get('mes') || defaultMonth;
+        if (!/^\d{4}-\d{2}$/.test(mes) || !inWindow(mes)) mes = inWindow(defaultMonth) ? defaultMonth : windowKeys[0];
+        var estado = params.get('estado');
+        if (estado !== 'pasados' && estado !== 'live') estado = 'proximos';
+        var formato = params.get('formato') === 'lista' ? 'lista' : 'cartel';
+        var tipo = params.get('tipo');
+        if (validTipos.indexOf(tipo) === -1) tipo = 'todos';
+        return { vista: vista, mes: mes, estado: estado, formato: formato, tipo: tipo };
+      }
+
+      function write(next) {
+        var params = new URLSearchParams();
+        params.set('vista', next.vista);
+        params.set('mes', next.mes);
+        params.set('estado', next.estado);
+        params.set('formato', next.formato);
+        if (next.tipo && next.tipo !== 'todos') params.set('tipo', next.tipo);
+        history.replaceState(null, '', location.pathname + '?' + params.toString());
+      }
+
+      function linkTo(state, overrides) {
+        var params = new URLSearchParams();
+        params.set('vista', overrides.vista || state.vista);
+        params.set('mes', overrides.mes || state.mes);
+        params.set('estado', overrides.estado || state.estado);
+        params.set('formato', overrides.formato || state.formato);
+        var tipo = overrides.tipo || state.tipo;
+        if (tipo && tipo !== 'todos') params.set('tipo', tipo);
+        return '?' + params.toString();
+      }
+
+      function classify(start, end) {
+        var now = Date.now();
+        if (now < Date.parse(start)) return 'proximos';
+        if (now > Date.parse(end)) return 'pasados';
+        return 'live';
+      }
+
+      function setLink(link, href, label, enabled) {
+        if (!link) return;
+        link.textContent = label;
+        if (enabled) {
+          link.href = href;
+          link.removeAttribute('aria-disabled');
+          link.tabIndex = 0;
+        } else {
+          link.removeAttribute('href');
+          link.setAttribute('aria-disabled', 'true');
+          link.tabIndex = -1;
+        }
+      }
+
+      function tag(key) {
+        var nodes = document.querySelectorAll('[data-vt]');
+        for (var i = 0; i < nodes.length; i++) {
+          nodes[i].style.viewTransitionName = nodes[i].getAttribute('data-vt') === key ? 'active-month' : '';
+        }
+      }
+
+      function monthTitle(key) {
+        return (monthNames[Number(key.slice(5, 7)) - 1] || '').toLocaleUpperCase('es-MX');
+      }
+
+      function apply() {
+        var state = read();
+        write(state);
+        page.classList.toggle('is-mes', state.vista === 'mes');
+        page.classList.toggle('is-year', state.vista === 'ano');
+        page.classList.toggle('is-lista', state.formato === 'lista');
+
+        var headingMain = document.querySelector('[data-heading-main]');
+        var headingYear = document.querySelector('[data-heading-year]');
+        var subtitle = document.querySelector('[data-subtitle]');
+        if (state.vista === 'ano') {
+          if (headingMain) headingMain.textContent = '12 MESES';
+          if (headingYear) headingYear.hidden = true;
+          if (subtitle) subtitle.textContent = spanLabel;
+        } else {
+          if (headingMain) headingMain.textContent = monthTitle(state.mes);
+          if (headingYear) {
+            headingYear.hidden = false;
+            headingYear.textContent = state.mes.slice(0, 4);
+          }
+          if (subtitle) subtitle.textContent = tagline;
+        }
+
+        var blocks = document.querySelectorAll('[data-month-key]');
+        for (var b = 0; b < blocks.length; b++) {
+          var key = blocks[b].getAttribute('data-month-key') || '';
+          blocks[b].hidden = state.vista === 'ano' ? false : key !== state.mes;
+        }
+
+        var visible = 0;
+        var cards = document.querySelectorAll('[data-event]');
+        for (var c = 0; c < cards.length; c++) {
+          var card = cards[c];
+          var status = card.getAttribute('data-force-status') === 'live'
+            ? 'live'
+            : classify(card.getAttribute('data-start'), card.getAttribute('data-end'));
+          card.setAttribute('data-status', status);
+          var badge = card.querySelector('[data-state]');
+          if (badge) badge.textContent = labels[status];
+          var touched = (card.getAttribute('data-months') || '').split(' ');
+          var inView = state.vista === 'ano'
+            ? touched.some(inWindow)
+            : touched.indexOf(state.mes) !== -1;
+          var listed = state.estado === 'pasados'
+            ? status === 'pasados'
+            : state.estado === 'live'
+              ? status === 'live'
+              : status === 'proximos' || status === 'live';
+          var typeMatch = state.tipo === 'todos' || card.getAttribute('data-tipo') === state.tipo;
+          card.hidden = !inView || !listed || !typeMatch;
+          if (!card.hidden) {
+            visible += 1;
+            var preview = card.querySelector('img.preview');
+            if (preview && preview.naturalWidth === 0) preview.loading = 'eager';
+          }
+        }
+
+        var liveDays = document.querySelectorAll('.day.is-live');
+        for (var d = 0; d < liveDays.length; d++) liveDays[d].classList.remove('is-live');
+        var chips = document.querySelectorAll('[data-event-id]');
+        for (var n = 0; n < chips.length; n++) {
+          var chip = chips[n];
+          var owner = document.getElementById(chip.getAttribute('data-event-id'));
+          var chipStatus = owner ? owner.getAttribute('data-status') : '';
+          if (chip.getAttribute('data-status') !== chipStatus) chip.setAttribute('data-status', chipStatus);
+          if (chipStatus === 'live') {
+            var day = chip.closest('.day');
+            if (day) day.classList.add('is-live');
+          }
+        }
+
+        var empty = document.querySelector('[data-empty]');
+        if (empty) {
+          empty.hidden = visible !== 0;
+          var scope = state.vista === 'ano' ? 'estos 12 meses' : 'este mes';
+          var phrase = tipoEmpty[state.tipo] || tipoEmpty.todos;
+          var kind = state.estado === 'live' ? 'en vivo' : state.estado === 'pasados' ? phrase.past : phrase.next;
+          var title = empty.querySelector('[data-empty-title]');
+          var kicker = empty.querySelector('[data-empty-kicker]');
+          var clear = empty.querySelector('[data-empty-clear]');
+          var time = empty.querySelector('[data-empty-time]');
+          if (title) title.textContent = 'No hay ' + phrase.noun + ' ' + kind + ' en ' + scope + '.';
+          if (kicker) kicker.textContent = (tipoLabel[state.tipo] || 'Todos') + ' · ' + (estadoLabel[state.estado] || 'Próximos');
+          if (clear) {
+            clear.hidden = state.tipo === 'todos';
+            clear.href = linkTo(state, { tipo: 'todos' });
+            clear.classList.toggle('is-primary', state.tipo !== 'todos');
+          }
+          if (time) {
+            var toPast = state.estado !== 'pasados';
+            time.textContent = toPast ? 'Ver pasados' : 'Ver próximos';
+            time.href = linkTo(state, { estado: toPast ? 'pasados' : 'proximos' });
+            time.classList.toggle('is-primary', state.tipo === 'todos');
+          }
+        }
+
+        var count = document.querySelector('[data-count]');
+        if (count) {
+          var noun = visible === 1 ? 'encuentro' : 'encuentros';
+          count.hidden = visible === 0;
+          count.textContent = visible + ' ' + noun + ' para conectar, aprender y construir. Horarios CDMX · UTC−6.';
+        }
+
+        var opens = document.querySelectorAll('[data-open-month]');
+        for (var o = 0; o < opens.length; o++) {
+          opens[o].href = linkTo(state, { vista: 'mes', mes: opens[o].getAttribute('data-open-month') });
+        }
+
+        var filters = document.querySelectorAll('[data-filter]');
+        for (var f = 0; f < filters.length; f++) {
+          filters[f].href = linkTo(state, { estado: filters[f].getAttribute('data-filter') });
+          if (filters[f].getAttribute('data-filter') === state.estado) filters[f].setAttribute('aria-current', 'page');
+          else filters[f].removeAttribute('aria-current');
+        }
+
+        var formats = document.querySelectorAll('[data-formato]');
+        for (var g = 0; g < formats.length; g++) {
+          formats[g].href = linkTo(state, { formato: formats[g].getAttribute('data-formato') });
+          if (formats[g].getAttribute('data-formato') === state.formato) formats[g].setAttribute('aria-current', 'page');
+          else formats[g].removeAttribute('aria-current');
+        }
+
+        var types = document.querySelectorAll('[data-tipo-filter]');
+        for (var h = 0; h < types.length; h++) {
+          types[h].href = linkTo(state, { tipo: types[h].getAttribute('data-tipo-filter') });
+          if (types[h].getAttribute('data-tipo-filter') === state.tipo) types[h].setAttribute('aria-current', 'page');
+          else types[h].removeAttribute('aria-current');
+        }
+
+        var prev = document.querySelector('[data-step="-1"]');
+        var next = document.querySelector('[data-step="1"]');
+        var toggle = document.querySelector('[data-vista-toggle]');
+        if (prev) prev.hidden = state.vista === 'ano';
+        if (next) next.hidden = state.vista === 'ano';
+        if (state.vista === 'ano') {
+          setLink(toggle, linkTo(state, { vista: 'mes' }), 'Ver mes', true);
+        } else {
+          var before = shiftMonth(state.mes, -1);
+          var after = shiftMonth(state.mes, 1);
+          setLink(prev, linkTo(state, { vista: 'mes', mes: before }), 'Mes anterior', inWindow(before));
+          setLink(next, linkTo(state, { vista: 'mes', mes: after }), 'Mes siguiente', inWindow(after));
+          setLink(toggle, linkTo(state, { vista: 'ano' }), 'Ver año', true);
+        }
+
+        var now = new Date();
+        var numeric = new Intl.DateTimeFormat('en-US', {
+          timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+        }).formatToParts(now);
+        function pick(type) {
+          var part = numeric.find(function (item) { return item.type === type; });
+          return part ? part.value : '';
+        }
+        var weekday = new Intl.DateTimeFormat('es-MX', { timeZone: zone, weekday: 'long' }).format(now);
+        var dayNumber = String(Number(pick('day')));
+        var todayKey = pick('year') + '-' + pick('month') + '-' + pick('day');
+        var when = document.querySelector('[data-today-when]');
+        var pill = document.querySelector('[data-today-jump]');
+        if (when) when.textContent = weekday.toLocaleUpperCase('es-MX') + ' ' + dayNumber;
+        if (pill) pill.setAttribute('aria-label', 'Hoy, ' + weekday + ' ' + dayNumber + '. Ir al día de hoy');
+        var dates = document.querySelectorAll('[data-date]');
+        for (var t = 0; t < dates.length; t++) {
+          dates[t].classList.toggle('is-today', dates[t].getAttribute('data-date') === todayKey);
+        }
+
+        document.documentElement.classList.remove('agenda-booting');
+      }
+
+      function scrollToToday() {
+        var cell = document.querySelector('.month-block:not([hidden]) .day.is-today');
+        if (cell) cell.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+      }
+
+      function play(type, morphKey, scrollToday) {
+        var update = function () { apply(); };
+        if (reduce || typeof document.startViewTransition !== 'function') {
+          update();
+          if (scrollToday) scrollToToday();
+          return;
+        }
+        if (morphKey) tag(morphKey);
+        var callback = function () {
+          update();
+          if (morphKey) tag(morphKey);
+        };
+        var transition;
+        try {
+          transition = supportsTypes
+            ? document.startViewTransition({ update: callback, types: [type] })
+            : document.startViewTransition(callback);
+        } catch (error) {
+          transition = document.startViewTransition(callback);
+        }
+        transition.finished.finally(function () {
+          tag(null);
+          if (scrollToday) scrollToToday();
+        });
+      }
+
+      function go(search, type, morphKey, scrollToday) {
+        var nextUrl = location.pathname + search;
+        if (location.pathname + location.search !== nextUrl) history.pushState(null, '', nextUrl);
+        play(type, morphKey, scrollToday);
+      }
+
+      document.querySelectorAll('[data-step], [data-vista-toggle], [data-filter], [data-formato], [data-tipo-filter], [data-empty-jump]').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+          if (link.getAttribute('aria-disabled') === 'true') {
+            event.preventDefault();
+            return;
+          }
+          var url = new URL(link.href, location.origin);
+          if (url.origin !== location.origin) return;
+          event.preventDefault();
+          var state = read();
+          if (link.hasAttribute('data-filter') || link.hasAttribute('data-formato') || link.hasAttribute('data-tipo-filter') || link.hasAttribute('data-empty-jump')) {
+            history.pushState(null, '', url.pathname + url.search);
+            apply();
+            return;
+          }
+          if (link.hasAttribute('data-vista-toggle')) {
+            if (state.vista === 'ano') go(url.search, 'zoom-in', state.mes, false);
+            else go(url.search, 'zoom-out', state.mes, false);
+            return;
+          }
+          go(url.search, 'fade', null, false);
+        });
+      });
+
+      var board = document.querySelector('.months');
+      if (board) {
+        board.addEventListener('click', function (event) {
+          var chip = event.target.closest('[data-event-id]');
+          if (chip && !page.classList.contains('is-year')) {
+            var card = document.getElementById(chip.getAttribute('data-event-id') || '');
+            if (card && card.hidden) {
+              event.preventDefault();
+              var status = card.getAttribute('data-status');
+              if (status === 'proximos' || status === 'live' || status === 'pasados') {
+                var params = new URLSearchParams(location.search);
+                params.set('estado', status);
+                params.set('vista', 'mes');
+                var cardTipo = card.getAttribute('data-tipo') || '';
+                var currentTipo = read().tipo;
+                if (currentTipo !== 'todos' && cardTipo && currentTipo !== cardTipo) {
+                  params.set('tipo', cardTipo);
+                }
+                history.pushState(null, '', location.pathname + '?' + params.toString());
+                apply();
+                if (!card.hidden) card.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+              }
+            }
+            return;
+          }
+          if (!page.classList.contains('is-year')) return;
+          var block = event.target.closest('[data-month-key]');
+          if (!block) return;
+          event.preventDefault();
+          var key = block.getAttribute('data-month-key');
+          go(linkTo(read(), { vista: 'mes', mes: key }), 'zoom-in', key, false);
+        });
+      }
+
+      var todayButton = document.querySelector('[data-today-jump]');
+      if (todayButton) {
+        todayButton.addEventListener('click', function () {
+          var state = read();
+          if (state.vista === 'mes' && state.mes === defaultMonth) {
+            scrollToToday();
+            return;
+          }
+          var type = state.vista === 'ano' ? 'zoom-in' : 'fade';
+          go(linkTo(state, { vista: 'mes', mes: defaultMonth }), type, state.vista === 'ano' ? defaultMonth : null, true);
+        });
+      }
+
+      window.addEventListener('popstate', function () {
+        var next = read();
+        var current = page.classList.contains('is-year') ? 'ano' : 'mes';
+        if (next.vista !== current) play(next.vista === 'ano' ? 'zoom-out' : 'zoom-in', next.vista === 'ano' ? next.mes : next.mes, false);
+        else play('fade', null, false);
+      });
+
+      apply();
+    })();
+  </script>
+</Base>

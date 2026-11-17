@@ -1,0 +1,86 @@
+---
+import type { DayChip, CalendarModel } from '../lib/calendar';
+
+interface Props {
+  calendar: CalendarModel;
+  transitionKey: string;
+}
+
+const { calendar, transitionKey } = Astro.props;
+
+function chipStyle(chip: DayChip): string {
+  return `--solid:${chip.solid};--on-solid:${chip.onSolid}`;
+}
+
+function chipClass(chip: DayChip): string[] {
+  if (chip.span === 'single') return ['chip'];
+  return ['chip', 'is-run', `is-${chip.span}`];
+}
+---
+
+<section class="calendar" data-vt={transitionKey} aria-label={`Calendario de ${calendar.monthLabel} de ${calendar.year}`}>
+  <div class="cal">
+    {
+      calendar.weekdayLabels.map((label) => (
+        <div class="dow" aria-hidden="true">
+          {label}
+        </div>
+      ))
+    }
+    {
+      calendar.cells.map((cell) => {
+        if (cell.kind === 'pad') {
+          return <div class="day day-pad" aria-hidden="true" />;
+        }
+
+        const [first] = cell.events;
+        const tint = cell.wash ? `background:${cell.wash}` : undefined;
+
+        return (
+          <div
+            class:list={['day', { 'has-event': cell.events.length > 0, 'is-today': cell.isToday }]}
+            data-date={cell.date}
+            style={tint}
+          >
+            {first && cell.events.length === 1 ? (
+              <a class="day-hit" href={`#${first.id}`} aria-label={first.label}>
+                <span class="day-num">{cell.day}</span>
+                <span class="chips">
+                  <span class:list={chipClass(first)} data-event-id={first.id} style={chipStyle(first)}>
+                    <span class="chip-index">{first.number}</span>
+                    <span class="chip-text">
+                      <span class="chip-short">{first.short}</span>
+                      <span class="chip-full">{first.chip}</span>
+                    </span>
+                  </span>
+                </span>
+              </a>
+            ) : first ? (
+              <div class="day-hit">
+                <a class="day-num" href={`#${first.id}`} aria-label={cell.dayLabel}>
+                  {cell.day}
+                </a>
+                <span class="chips">
+                  {cell.events.map((chip) => (
+                    <a class:list={chipClass(chip)} data-event-id={chip.id} href={`#${chip.id}`} aria-label={chip.label} style={chipStyle(chip)}>
+                      <span class="chip-index">{chip.number}</span>
+                      <span class="chip-text">
+                        <span class="chip-short">{chip.short}</span>
+                        <span class="chip-full">{chip.chip}</span>
+                      </span>
+                    </a>
+                  ))}
+                </span>
+              </div>
+            ) : (
+              <div class="day-hit">
+                <span class="day-num">{cell.day}</span>
+              </div>
+            )}
+            <span class="hoy-mark">HOY</span>
+          </div>
+        );
+      })
+    }
+  </div>
+</section>
