@@ -1,4 +1,4 @@
-import raw from '../../../fuentes/events.json';
+import raw from '../data/events.json';
 import { EVENT_TIPOS, type EventRecord, type EventTipo, type EventsFile } from './types';
 
 const ISO_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/;
