@@ -171,6 +171,21 @@
       "imageFit": "contain"
     },
     {
+      "id": "bitcoin-talk-pueblos",
+      "tipo": "meetup",
+      "title": "Bitcoin Talk: El nacimiento de pueblos Bitcoin en México",
+      "chip": "Bitcoin",
+      "color": "#b45309",
+      "organizer": "La Carnivoría",
+      "start": "2026-11-21T14:00:00-06:00",
+      "end": "2026-11-21T20:00:00-06:00",
+      "dateLabel": "Sábado 21 noviembre",
+      "timeLabel": "14:00",
+      "venue": "La Carnivoría, 3 Norte 1003-2, San Andrés Cholula",
+      "detail": "Encuentro mensual de Bitcoin. Entrada sin costo",
+      "url": "https://www.eventbrite.com.mx/e/bitcoin-talk-el-nacimiento-de-pueblos-bitcoin-en-mexico-tickets-1999318598749"
+    },
+    {
       "id": "tech-and-chill",
       "tipo": "meetup",
       "title": "Tech & Chill: Agentes de IA sobre Avalanche",
@@ -301,6 +316,40 @@
       "venue": "IBERO Puebla, Blvd. del Niño Poblano 2901, San Andrés Cholula",
       "detail": "Diálogos entre academia y empresa",
       "url": "https://www.iberopuebla.mx/educacion-continua/foro-IA"
+    },
+    {
+      "id": "expo-akai",
+      "tipo": "feria",
+      "title": "Expo Akai",
+      "chip": "Akai",
+      "color": "#be123c",
+      "organizer": "Expo Akai",
+      "start": "2026-12-05T11:00:00-06:00",
+      "end": "2026-12-06T20:00:00-06:00",
+      "dateLabel": "5 y 6 diciembre",
+      "timeLabel": "11:00–20:00",
+      "venue": "Centro de Convenciones de Puebla, Blvd. Héroes del 5 de Mayo 402",
+      "detail": "Anime, manga, cómics, videojuegos y cosplay. 16.ª edición",
+      "url": "https://expoakai.com/",
+      "image": "/eventos/expo-akai.webp",
+      "imageFit": "contain"
+    },
+    {
+      "id": "cultura-bitcoin",
+      "tipo": "meetup",
+      "title": "Cultura Bitcoin: Economía colaborativa",
+      "chip": "BTC",
+      "color": "#a16207",
+      "organizer": "Bitcoin Meetup Puebla",
+      "start": "2027-01-01T18:00:00-06:00",
+      "end": "2027-01-01T21:00:00-06:00",
+      "dateLabel": "Viernes 1 enero",
+      "timeLabel": "18:00–21:00",
+      "venue": "Workosfera, 5 Oriente 612, Colonia Centro, Puebla",
+      "detail": "Bitcoin y blockchain para cualquier nivel",
+      "url": "https://www.meetup.com/bitcoin-meetup-puebla-cultura-bitcoin-economia-colaborativa/",
+      "image": "/eventos/cultura-bitcoin.webp",
+      "imageFit": "cover"
     },
     {
       "id": "plan-vida-stem",
