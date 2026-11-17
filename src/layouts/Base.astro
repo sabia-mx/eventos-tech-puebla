@@ -10,6 +10,9 @@ interface Props {
 }
 
 const { title, description, timezone } = Astro.props;
+const origin = 'https://eventostechpuebla.com';
+const site = `${origin}/`;
+const image = `${origin}/og.jpg`;
 ---
 
 <!doctype html>
@@ -22,7 +25,23 @@ const { title, description, timezone } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f6f3ec" />
+    <link rel="canonical" href={site} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:site_name" content="Eventos tech en Puebla" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={site} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="720" />
+    <meta property="og:image:alt" content="Eventos tech en Puebla" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content="Eventos tech en Puebla" />
     <title>{title}</title>
   </head>
   <body>

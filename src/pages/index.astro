@@ -25,9 +25,9 @@ const first = span[0];
 const last = span[span.length - 1];
 const capitalize = (label: string) => label.charAt(0).toLocaleUpperCase('es-MX') + label.slice(1);
 const spanLabel = `${capitalize(first.calendar.monthLabel)} ${first.year} — ${capitalize(last.calendar.monthLabel)} ${last.year}`;
-const title = 'Agenda del ecosistema · Puebla';
+const title = 'Eventos tech en Puebla';
 const description =
-  'Agenda de tecnología, ciencia, videojuegos, innovación y emprendimiento en Puebla. Un mes a la vez, o los 12 meses desde el anterior.';
+  'Eventos tech en Puebla: conferencias, hackatones, talleres, meetups, concursos y expos de tecnología, ciencia e innovación.';
 ---
 
 <Base title={title} description={description} timezone={source.timezone}>
@@ -40,7 +40,7 @@ const description =
   >
     <header class="masthead">
       <div class="masthead-top">
-        <p class="kicker">AGENDA DEL ECOSISTEMA · PUEBLA</p>
+        <p class="kicker">EVENTOS TECH EN PUEBLA</p>
         <button type="button" class="today-pill" data-today-jump aria-label={`Hoy, ${today.weekdaySpoken} ${today.day}. Ir al día de hoy`}>
           <span class="today-flag">HOY</span>
           <span aria-hidden="true">·</span>
@@ -92,7 +92,7 @@ const description =
               Tipo de evento
               <span class="type-chevron" aria-hidden="true" set:html={chevronIcon} />
             </button>
-            <div class="type-list" id="tipo-list" role="listbox" aria-label="Tipo de evento" hidden>
+            <div class="type-list" id="tipo-list" role="listbox" aria-label="Tipo de evento" aria-multiselectable="true" hidden>
               <button type="button" role="option" data-tipo-option="conferencia">Conferencia</button>
               <button type="button" role="option" data-tipo-option="hackaton">Hackatón</button>
               <button type="button" role="option" data-tipo-option="taller">Taller</button>
@@ -101,11 +101,7 @@ const description =
               <button type="button" role="option" data-tipo-option="feria">Expo</button>
             </div>
           </div>
-          <button type="button" class="type-pill" data-tipo-pill hidden>
-            <span data-tipo-pill-label></span>
-            <span aria-hidden="true">×</span>
-            <span class="sr-only">Quitar filtro de tipo</span>
-          </button>
+          <div class="type-pills" data-tipo-pills></div>
           <nav class="view-toggle" aria-label="Forma de las tarjetas">
             <a href="?formato=cartel" data-formato="cartel">
               <span class="view-icon" aria-hidden="true" set:html={gridIcon} />
@@ -119,7 +115,7 @@ const description =
         </div>
       </div>
       <div class="empty" data-empty hidden>
-        <p class="empty-kicker" data-empty-kicker>Agenda</p>
+        <p class="empty-kicker" data-empty-kicker>Eventos</p>
         <h3 class="empty-title" data-empty-title>No hay eventos en esta vista.</h3>
         <p class="empty-note">El calendario de arriba sigue con todo el mes.</p>
         <div class="empty-actions">
@@ -204,11 +200,29 @@ const description =
         }
       }
 
+      function parseTipos(value) {
+        var seen = {};
+        var list = [];
+        String(value || '').split(',').forEach(function (item) {
+          if (validTipos.indexOf(item) !== -1 && !seen[item]) {
+            seen[item] = true;
+            list.push(item);
+          }
+        });
+        return list.sort(function (a, b) { return validTipos.indexOf(a) - validTipos.indexOf(b); });
+      }
+
+      function storedTipos(stored) {
+        if (Array.isArray(stored.tipos)) return parseTipos(stored.tipos.join(','));
+        if (typeof stored.tipo === 'string') return parseTipos(stored.tipo);
+        return [];
+      }
+
       function savePrefs(state) {
         try {
           localStorage.setItem('eventos-tech-puebla', JSON.stringify({
             formato: state.formato,
-            tipo: state.tipo
+            tipos: state.tipos
           }));
         } catch (error) {}
       }
@@ -225,13 +239,10 @@ const description =
         var formato = formatoParam === 'lista' || formatoParam === 'cartel'
           ? formatoParam
           : stored.formato === 'lista' ? 'lista' : 'cartel';
-        var tipoParam = params.get('tipo');
-        var tipo = 'todos';
-        if (validTipos.indexOf(tipoParam) !== -1) tipo = tipoParam;
-        else if (tipoParam === null && validTipos.indexOf(stored.tipo) !== -1) tipo = stored.tipo;
+        var tipos = params.has('tipo') ? parseTipos(params.get('tipo')) : storedTipos(stored);
         var dia = params.get('dia') || '';
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || dia.slice(0, 7) !== mes || vista === 'ano') dia = '';
-        return { vista: vista, mes: mes, estado: estado, formato: formato, tipo: tipo, dia: dia };
+        return { vista: vista, mes: mes, estado: estado, formato: formato, tipos: tipos, dia: dia };
       }
 
       function write(next) {
@@ -240,7 +251,7 @@ const description =
         params.set('mes', next.mes);
         params.set('estado', next.estado);
         params.set('formato', next.formato);
-        if (next.tipo && next.tipo !== 'todos') params.set('tipo', next.tipo);
+        if (next.tipos && next.tipos.length) params.set('tipo', next.tipos.join(','));
         if (next.vista !== 'ano' && next.dia) params.set('dia', next.dia);
         history.replaceState(null, '', location.pathname + '?' + params.toString());
       }
@@ -253,8 +264,11 @@ const description =
         params.set('mes', mes);
         params.set('estado', overrides.estado || state.estado);
         params.set('formato', overrides.formato || state.formato);
-        var tipo = overrides.tipo || state.tipo;
-        if (tipo && tipo !== 'todos') params.set('tipo', tipo);
+        var tipos = state.tipos;
+        if (Object.prototype.hasOwnProperty.call(overrides, 'tipos')) tipos = overrides.tipos;
+        else if (overrides.tipo === 'todos') tipos = [];
+        else if (overrides.tipo) tipos = parseTipos(overrides.tipo);
+        if (tipos.length) params.set('tipo', tipos.join(','));
         var dia = Object.prototype.hasOwnProperty.call(overrides, 'dia') ? overrides.dia : state.dia;
         if (vista !== 'ano' && dia && String(dia).slice(0, 7) === mes) params.set('dia', dia);
         return '?' + params.toString();
@@ -350,7 +364,7 @@ const description =
             : state.estado === 'live'
               ? status === 'live'
               : status === 'proximos' || status === 'live';
-          var typeMatch = state.tipo === 'todos' || card.getAttribute('data-tipo') === state.tipo;
+          var typeMatch = !state.tipos.length || state.tipos.indexOf(card.getAttribute('data-tipo')) !== -1;
           card.hidden = state.dia
             ? !coversDay(card, state.dia) || !typeMatch
             : !inView || !listed || !typeMatch;
@@ -379,7 +393,7 @@ const description =
         if (empty) {
           empty.hidden = visible !== 0;
           var scope = state.dia ? 'el ' + dayPhrase(state.dia) : state.vista === 'ano' ? 'estos 12 meses' : 'este mes';
-          var phrase = tipoEmpty[state.tipo] || tipoEmpty.todos;
+          var phrase = state.tipos.length === 1 ? (tipoEmpty[state.tipos[0]] || tipoEmpty.todos) : tipoEmpty.todos;
           var kind = state.estado === 'live' ? 'en vivo' : state.estado === 'pasados' ? phrase.past : phrase.next;
           var title = empty.querySelector('[data-empty-title]');
           var kicker = empty.querySelector('[data-empty-kicker]');
@@ -391,20 +405,21 @@ const description =
               : 'No hay ' + phrase.noun + ' ' + kind + ' en ' + scope + '.';
           }
           if (kicker) {
+            var tipoNames = state.tipos.map(function (item) { return tipoLabel[item]; }).join(' · ');
             kicker.textContent = state.dia
               ? dayPhrase(state.dia)
-              : (tipoLabel[state.tipo] || 'Todos') + ' · ' + (estadoLabel[state.estado] || 'Próximos');
+              : (tipoNames || 'Todos') + ' · ' + (estadoLabel[state.estado] || 'Próximos');
           }
           if (clear) {
-            clear.hidden = state.tipo === 'todos';
+            clear.hidden = state.tipos.length === 0;
             clear.href = linkTo(state, { tipo: 'todos' });
-            clear.classList.toggle('is-primary', state.tipo !== 'todos');
+            clear.classList.toggle('is-primary', state.tipos.length !== 0);
           }
           if (time) {
             var toPast = state.estado !== 'pasados';
             time.textContent = toPast ? 'Ver pasados' : 'Ver próximos';
             time.href = linkTo(state, { estado: toPast ? 'pasados' : 'proximos' });
-            time.classList.toggle('is-primary', state.tipo === 'todos');
+            time.classList.toggle('is-primary', state.tipos.length === 0);
           }
         }
 
@@ -479,13 +494,10 @@ const description =
 
         var tipoOptions = document.querySelectorAll('[data-tipo-option]');
         for (var p = 0; p < tipoOptions.length; p++) {
-          var chosen = tipoOptions[p].getAttribute('data-tipo-option') === state.tipo;
+          var chosen = state.tipos.indexOf(tipoOptions[p].getAttribute('data-tipo-option')) !== -1;
           tipoOptions[p].setAttribute('aria-selected', chosen ? 'true' : 'false');
         }
-        var tipoPill = document.querySelector('[data-tipo-pill]');
-        var tipoPillLabel = document.querySelector('[data-tipo-pill-label]');
-        if (tipoPill) tipoPill.hidden = state.tipo === 'todos';
-        if (tipoPillLabel) tipoPillLabel.textContent = tipoLabel[state.tipo] || '';
+        renderTipoPills(state.tipos);
         savePrefs(state);
 
         document.documentElement.classList.remove('agenda-booting');
@@ -563,6 +575,14 @@ const description =
           event.preventDefault();
           var state = read();
           if (link.hasAttribute('data-filter') || link.hasAttribute('data-formato') || link.hasAttribute('data-empty-jump')) {
+            if (link.hasAttribute('data-empty-clear')) {
+              try {
+                var stored = loadPrefs();
+                stored.tipos = [];
+                delete stored.tipo;
+                localStorage.setItem('eventos-tech-puebla', JSON.stringify(stored));
+              } catch (error) {}
+            }
             history.pushState(null, '', url.pathname + url.search);
             apply();
             return;
@@ -589,7 +609,9 @@ const description =
             var card = chip ? document.getElementById(chip.getAttribute('data-event-id') || '') : null;
             if (card && card.hidden) {
               var cardTipo = card.getAttribute('data-tipo') || '';
-              if (picking.tipo !== 'todos' && cardTipo && picking.tipo !== cardTipo) params.set('tipo', cardTipo);
+              if (cardTipo && picking.tipos.length && picking.tipos.indexOf(cardTipo) === -1) {
+                params.set('tipo', parseTipos(picking.tipos.concat(cardTipo).join(',')).join(','));
+              }
             }
             if (!chip && picking.dia === date) params.delete('dia');
             else params.set('dia', date);
@@ -611,15 +633,44 @@ const description =
         });
       }
 
+      function renderTipoPills(tipos) {
+        var box = document.querySelector('[data-tipo-pills]');
+        if (!box) return;
+        box.replaceChildren();
+        tipos.forEach(function (tipo) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'type-pill';
+          button.setAttribute('data-tipo-remove', tipo);
+          var label = document.createElement('span');
+          label.textContent = tipoLabel[tipo] || tipo;
+          var mark = document.createElement('span');
+          mark.setAttribute('aria-hidden', 'true');
+          mark.textContent = '×';
+          var sr = document.createElement('span');
+          sr.className = 'sr-only';
+          sr.textContent = 'Quitar ' + (tipoLabel[tipo] || tipo);
+          button.appendChild(label);
+          button.appendChild(mark);
+          button.appendChild(sr);
+          box.appendChild(button);
+        });
+      }
+
       function chooseTipo(nextTipo) {
+        if (validTipos.indexOf(nextTipo) === -1) return;
+        var current = read().tipos.slice();
+        var index = current.indexOf(nextTipo);
+        if (index === -1) current.push(nextTipo);
+        else current.splice(index, 1);
+        current = parseTipos(current.join(','));
         var params = new URLSearchParams(location.search);
-        if (validTipos.indexOf(nextTipo) === -1) {
-          nextTipo = 'todos';
-          params.delete('tipo');
-        } else params.set('tipo', nextTipo);
+        if (current.length) params.set('tipo', current.join(','));
+        else params.delete('tipo');
         try {
           var stored = loadPrefs();
-          stored.tipo = nextTipo;
+          stored.tipos = current;
+          delete stored.tipo;
           localStorage.setItem('eventos-tech-puebla', JSON.stringify(stored));
         } catch (error) {}
         history.pushState(null, '', location.pathname + '?' + params.toString());
@@ -667,18 +718,12 @@ const description =
         if (event.key === 'Escape') closeTipoMenu();
       });
 
-      var tipoPillButton = document.querySelector('[data-tipo-pill]');
-      if (tipoPillButton) {
-        tipoPillButton.addEventListener('click', function () {
-          var params = new URLSearchParams(location.search);
-          params.delete('tipo');
-          try {
-            var stored = loadPrefs();
-            stored.tipo = 'todos';
-            localStorage.setItem('eventos-tech-puebla', JSON.stringify(stored));
-          } catch (error) {}
-          history.pushState(null, '', location.pathname + '?' + params.toString());
-          apply();
+      var tipoPills = document.querySelector('[data-tipo-pills]');
+      if (tipoPills) {
+        tipoPills.addEventListener('click', function (event) {
+          var pill = event.target.closest('[data-tipo-remove]');
+          if (!pill) return;
+          chooseTipo(pill.getAttribute('data-tipo-remove'));
         });
       }
 
