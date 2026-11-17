@@ -104,7 +104,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0 0 0 auto;
+  margin: 0 0 0.9rem auto;
   padding: 0.42rem 0.8rem;
   border: 1px solid var(--ink);
   border-radius: 999px;
@@ -248,9 +248,23 @@ body {
 }
 
 .page.is-year .month-block {
+  position: relative;
   min-width: 0;
   margin: 0;
   cursor: pointer;
+  touch-action: manipulation;
+}
+
+.page.is-year .month-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.page.is-year .month-title {
+  position: relative;
+  z-index: 2;
 }
 
 .page.is-year .month-block .month-title {
@@ -290,6 +304,7 @@ body {
 
 .page.is-year .calendar {
   margin-top: 0;
+  pointer-events: none;
 }
 
 .page.is-year .cal {
@@ -435,6 +450,34 @@ body {
   box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 
+.page.is-mes .day {
+  cursor: pointer;
+}
+
+.day.is-picked .day-num {
+  justify-content: center;
+  padding: 0.16rem 0.32rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.day-clear {
+  display: inline-flex;
+  flex: 1 1 100%;
+  align-items: center;
+  min-height: 2.2rem;
+  padding: 0.3rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .day.is-today .hoy-mark {
   display: block;
 }
@@ -560,38 +603,29 @@ body {
   line-height: 0.95;
 }
 
-.list-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem 1rem;
-  margin: 0 0 0.9rem;
-}
-
 .cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
 }
 
-.filters,
-.formats,
-.types {
+.list-tools {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.45rem;
+  margin: 0 0 0.9rem;
+}
+
+.filters {
+  display: flex;
+  flex: 1 1 100%;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin: 0;
 }
 
-.types {
-  flex: 1 1 100%;
-  gap: 0.32rem;
-}
-
-.filters a,
-.formats a,
-.types a {
+.filters a {
   display: inline-flex;
   align-items: center;
   min-height: 2.4rem;
@@ -605,17 +639,139 @@ body {
   text-decoration: none;
 }
 
-.types a {
-  min-height: 2.1rem;
-  padding: 0.22rem 0.72rem;
-  font-size: 0.82rem;
-}
-
-.filters a[aria-current='page'],
-.formats a[aria-current='page'],
-.types a[aria-current='page'] {
+.filters a[aria-current='page'] {
   background: var(--ink);
   color: var(--paper);
+}
+
+.view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  margin-left: auto;
+  padding: 0.18rem;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.view-toggle a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  min-height: 2rem;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  color: #d7d0c4;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.view-toggle a[aria-current='page'] {
+  background: var(--card);
+  color: var(--ink);
+}
+
+.view-icon,
+.view-icon svg,
+.type-chevron,
+.type-chevron svg {
+  display: block;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.type-row {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.type-menu {
+  position: relative;
+}
+
+.type-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.3rem 0.85rem 0.3rem 0.95rem;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.type-menu.is-open .type-trigger {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.type-chevron {
+  transition: transform 160ms ease;
+}
+
+.type-menu.is-open .type-chevron {
+  transform: rotate(180deg);
+}
+
+.type-list {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  display: grid;
+  min-width: 12.5rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 16px 32px rgba(28, 27, 25, 0.12);
+}
+
+.type-list button {
+  display: flex;
+  align-items: center;
+  min-height: 2.35rem;
+  padding: 0.3rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.type-list button:hover,
+.type-list button[aria-selected='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.35rem;
+  padding: 0.2rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .empty {
@@ -1037,6 +1193,10 @@ html.agenda-booting .cards {
     padding-block: 1.8rem 3.5rem;
   }
 
+  .today-pill {
+    margin-bottom: 0;
+  }
+
   .kicker {
     font-size: 0.78rem;
     letter-spacing: 0.14em;
@@ -1089,18 +1249,18 @@ html.agenda-booting .cards {
 
 .page.is-lista .card {
   display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: start;
   column-gap: 0.15rem;
 }
 
 .page.is-lista .preview-frame {
   grid-column: 1;
   grid-row: 1;
-  width: 5.6rem;
-  height: 5.6rem;
+  width: 4.6rem;
+  height: 4.6rem;
   aspect-ratio: 1;
-  margin: 0.75rem 0 0.75rem 0.75rem;
+  margin: 0.7rem 0 0.7rem 0.7rem;
   border-radius: 10px;
 }
 
@@ -1252,11 +1412,24 @@ html.agenda-booting .cards {
   view-transition-name: foot;
 }
 
+::view-transition {
+  pointer-events: none;
+}
+
 ::view-transition-group(*),
 ::view-transition-old(*),
 ::view-transition-new(*) {
   animation-duration: 140ms;
   animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (max-width: 980px) {
+  .masthead,
+  .months,
+  .register-section,
+  .colophon {
+    view-transition-name: none;
+  }
 }
 
 ::view-transition-group(active-month),

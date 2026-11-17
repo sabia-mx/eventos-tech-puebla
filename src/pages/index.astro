@@ -2,6 +2,9 @@
 import Base from '../layouts/Base.astro';
 import EventCard from '../components/EventCard.astro';
 import MonthCalendar from '../components/MonthCalendar.astro';
+import gridIcon from 'lucide-static/icons/layout-grid.svg?raw';
+import listIcon from 'lucide-static/icons/list.svg?raw';
+import chevronIcon from 'lucide-static/icons/chevron-down.svg?raw';
 import { buildSpan, eventMonthKeys, mexicoToday, monthEventIds } from '../lib/calendar';
 import { loadEvents } from '../lib/events';
 import { presentEvents } from '../lib/present';
@@ -77,24 +80,43 @@ const description =
         <h2 id="registro-title">ESCANEA Y REGÍSTRATE</h2>
       </div>
       <div class="list-tools">
+        <button type="button" class="day-clear" data-day-clear hidden>Quitar día</button>
         <nav class="filters" aria-label="Filtrar por momento">
           <a href="?estado=pasados" data-filter="pasados">Pasados</a>
           <a href="?estado=proximos" data-filter="proximos">Próximos</a>
           <a href="?estado=live" data-filter="live">En vivo</a>
         </nav>
-        <nav class="formats" aria-label="Forma de las tarjetas">
-          <a href="?formato=cartel" data-formato="cartel">Cartel</a>
-          <a href="?formato=lista" data-formato="lista">Lista</a>
-        </nav>
-        <nav class="types" aria-label="Filtrar por tipo de evento">
-          <a href="?" data-tipo-filter="todos">Todos</a>
-          <a href="?tipo=conferencia" data-tipo-filter="conferencia">Conferencia</a>
-          <a href="?tipo=hackaton" data-tipo-filter="hackaton">Hackatón</a>
-          <a href="?tipo=taller" data-tipo-filter="taller">Taller</a>
-          <a href="?tipo=meetup" data-tipo-filter="meetup">Meetup</a>
-          <a href="?tipo=concurso" data-tipo-filter="concurso">Concurso</a>
-          <a href="?tipo=feria" data-tipo-filter="feria">Expo</a>
-        </nav>
+        <div class="type-row">
+          <div class="type-menu" data-tipo-menu>
+            <button type="button" class="type-trigger" data-tipo-trigger aria-expanded="false" aria-controls="tipo-list">
+              Tipo de evento
+              <span class="type-chevron" aria-hidden="true" set:html={chevronIcon} />
+            </button>
+            <div class="type-list" id="tipo-list" role="listbox" aria-label="Tipo de evento" hidden>
+              <button type="button" role="option" data-tipo-option="conferencia">Conferencia</button>
+              <button type="button" role="option" data-tipo-option="hackaton">Hackatón</button>
+              <button type="button" role="option" data-tipo-option="taller">Taller</button>
+              <button type="button" role="option" data-tipo-option="meetup">Meetup</button>
+              <button type="button" role="option" data-tipo-option="concurso">Concurso</button>
+              <button type="button" role="option" data-tipo-option="feria">Expo</button>
+            </div>
+          </div>
+          <button type="button" class="type-pill" data-tipo-pill hidden>
+            <span data-tipo-pill-label></span>
+            <span aria-hidden="true">×</span>
+            <span class="sr-only">Quitar filtro de tipo</span>
+          </button>
+          <nav class="view-toggle" aria-label="Forma de las tarjetas">
+            <a href="?formato=cartel" data-formato="cartel">
+              <span class="view-icon" aria-hidden="true" set:html={gridIcon} />
+              Cartel
+            </a>
+            <a href="?formato=lista" data-formato="lista">
+              <span class="view-icon" aria-hidden="true" set:html={listIcon} />
+              Lista
+            </a>
+          </nav>
+        </div>
       </div>
       <div class="empty" data-empty hidden>
         <p class="empty-kicker" data-empty-kicker>Agenda</p>
@@ -173,17 +195,43 @@ const description =
 
       function inWindow(key) { return windowKeys.indexOf(key) !== -1; }
 
+      function loadPrefs() {
+        try {
+          var parsed = JSON.parse(localStorage.getItem('eventos-tech-puebla') || '{}');
+          return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function savePrefs(state) {
+        try {
+          localStorage.setItem('eventos-tech-puebla', JSON.stringify({
+            formato: state.formato,
+            tipo: state.tipo
+          }));
+        } catch (error) {}
+      }
+
       function read() {
         var params = new URLSearchParams(location.search);
+        var stored = loadPrefs();
         var vista = params.get('vista') === 'ano' ? 'ano' : 'mes';
         var mes = params.get('mes') || defaultMonth;
         if (!/^\d{4}-\d{2}$/.test(mes) || !inWindow(mes)) mes = inWindow(defaultMonth) ? defaultMonth : windowKeys[0];
         var estado = params.get('estado');
         if (estado !== 'pasados' && estado !== 'live') estado = 'proximos';
-        var formato = params.get('formato') === 'lista' ? 'lista' : 'cartel';
-        var tipo = params.get('tipo');
-        if (validTipos.indexOf(tipo) === -1) tipo = 'todos';
-        return { vista: vista, mes: mes, estado: estado, formato: formato, tipo: tipo };
+        var formatoParam = params.get('formato');
+        var formato = formatoParam === 'lista' || formatoParam === 'cartel'
+          ? formatoParam
+          : stored.formato === 'lista' ? 'lista' : 'cartel';
+        var tipoParam = params.get('tipo');
+        var tipo = 'todos';
+        if (validTipos.indexOf(tipoParam) !== -1) tipo = tipoParam;
+        else if (tipoParam === null && validTipos.indexOf(stored.tipo) !== -1) tipo = stored.tipo;
+        var dia = params.get('dia') || '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || dia.slice(0, 7) !== mes || vista === 'ano') dia = '';
+        return { vista: vista, mes: mes, estado: estado, formato: formato, tipo: tipo, dia: dia };
       }
 
       function write(next) {
@@ -193,18 +241,33 @@ const description =
         params.set('estado', next.estado);
         params.set('formato', next.formato);
         if (next.tipo && next.tipo !== 'todos') params.set('tipo', next.tipo);
+        if (next.vista !== 'ano' && next.dia) params.set('dia', next.dia);
         history.replaceState(null, '', location.pathname + '?' + params.toString());
       }
 
       function linkTo(state, overrides) {
         var params = new URLSearchParams();
-        params.set('vista', overrides.vista || state.vista);
-        params.set('mes', overrides.mes || state.mes);
+        var vista = overrides.vista || state.vista;
+        var mes = overrides.mes || state.mes;
+        params.set('vista', vista);
+        params.set('mes', mes);
         params.set('estado', overrides.estado || state.estado);
         params.set('formato', overrides.formato || state.formato);
         var tipo = overrides.tipo || state.tipo;
         if (tipo && tipo !== 'todos') params.set('tipo', tipo);
+        var dia = Object.prototype.hasOwnProperty.call(overrides, 'dia') ? overrides.dia : state.dia;
+        if (vista !== 'ano' && dia && String(dia).slice(0, 7) === mes) params.set('dia', dia);
         return '?' + params.toString();
+      }
+
+      function dayPhrase(key) {
+        return Number(key.slice(8, 10)) + ' de ' + monthNames[Number(key.slice(5, 7)) - 1];
+      }
+
+      function coversDay(card, dayKey) {
+        var start = (card.getAttribute('data-start') || '').slice(0, 10);
+        var end = (card.getAttribute('data-end') || '').slice(0, 10);
+        return start <= dayKey && dayKey <= end;
       }
 
       function classify(start, end) {
@@ -288,7 +351,9 @@ const description =
               ? status === 'live'
               : status === 'proximos' || status === 'live';
           var typeMatch = state.tipo === 'todos' || card.getAttribute('data-tipo') === state.tipo;
-          card.hidden = !inView || !listed || !typeMatch;
+          card.hidden = state.dia
+            ? !coversDay(card, state.dia) || !typeMatch
+            : !inView || !listed || !typeMatch;
           if (!card.hidden) {
             visible += 1;
             var preview = card.querySelector('img.preview');
@@ -313,15 +378,23 @@ const description =
         var empty = document.querySelector('[data-empty]');
         if (empty) {
           empty.hidden = visible !== 0;
-          var scope = state.vista === 'ano' ? 'estos 12 meses' : 'este mes';
+          var scope = state.dia ? 'el ' + dayPhrase(state.dia) : state.vista === 'ano' ? 'estos 12 meses' : 'este mes';
           var phrase = tipoEmpty[state.tipo] || tipoEmpty.todos;
           var kind = state.estado === 'live' ? 'en vivo' : state.estado === 'pasados' ? phrase.past : phrase.next;
           var title = empty.querySelector('[data-empty-title]');
           var kicker = empty.querySelector('[data-empty-kicker]');
           var clear = empty.querySelector('[data-empty-clear]');
           var time = empty.querySelector('[data-empty-time]');
-          if (title) title.textContent = 'No hay ' + phrase.noun + ' ' + kind + ' en ' + scope + '.';
-          if (kicker) kicker.textContent = (tipoLabel[state.tipo] || 'Todos') + ' · ' + (estadoLabel[state.estado] || 'Próximos');
+          if (title) {
+            title.textContent = state.dia
+              ? 'No hay ' + phrase.noun + ' ' + scope + '.'
+              : 'No hay ' + phrase.noun + ' ' + kind + ' en ' + scope + '.';
+          }
+          if (kicker) {
+            kicker.textContent = state.dia
+              ? dayPhrase(state.dia)
+              : (tipoLabel[state.tipo] || 'Todos') + ' · ' + (estadoLabel[state.estado] || 'Próximos');
+          }
           if (clear) {
             clear.hidden = state.tipo === 'todos';
             clear.href = linkTo(state, { tipo: 'todos' });
@@ -361,13 +434,6 @@ const description =
           else formats[g].removeAttribute('aria-current');
         }
 
-        var types = document.querySelectorAll('[data-tipo-filter]');
-        for (var h = 0; h < types.length; h++) {
-          types[h].href = linkTo(state, { tipo: types[h].getAttribute('data-tipo-filter') });
-          if (types[h].getAttribute('data-tipo-filter') === state.tipo) types[h].setAttribute('aria-current', 'page');
-          else types[h].removeAttribute('aria-current');
-        }
-
         var prev = document.querySelector('[data-step="-1"]');
         var next = document.querySelector('[data-step="1"]');
         var toggle = document.querySelector('[data-vista-toggle]');
@@ -400,8 +466,27 @@ const description =
         if (pill) pill.setAttribute('aria-label', 'Hoy, ' + weekday + ' ' + dayNumber + '. Ir al día de hoy');
         var dates = document.querySelectorAll('[data-date]');
         for (var t = 0; t < dates.length; t++) {
-          dates[t].classList.toggle('is-today', dates[t].getAttribute('data-date') === todayKey);
+          var dateValue = dates[t].getAttribute('data-date');
+          dates[t].classList.toggle('is-today', dateValue === todayKey);
+          dates[t].classList.toggle('is-picked', Boolean(state.dia) && dateValue === state.dia);
         }
+
+        var dayClear = document.querySelector('[data-day-clear]');
+        if (dayClear) {
+          dayClear.hidden = !state.dia;
+          dayClear.textContent = state.dia ? dayPhrase(state.dia) + ' ×' : 'Quitar día';
+        }
+
+        var tipoOptions = document.querySelectorAll('[data-tipo-option]');
+        for (var p = 0; p < tipoOptions.length; p++) {
+          var chosen = tipoOptions[p].getAttribute('data-tipo-option') === state.tipo;
+          tipoOptions[p].setAttribute('aria-selected', chosen ? 'true' : 'false');
+        }
+        var tipoPill = document.querySelector('[data-tipo-pill]');
+        var tipoPillLabel = document.querySelector('[data-tipo-pill-label]');
+        if (tipoPill) tipoPill.hidden = state.tipo === 'todos';
+        if (tipoPillLabel) tipoPillLabel.textContent = tipoLabel[state.tipo] || '';
+        savePrefs(state);
 
         document.documentElement.classList.remove('agenda-booting');
       }
@@ -411,16 +496,32 @@ const description =
         if (cell) cell.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
       }
 
+      var currentTransition = null;
+
+      function cutMotion() {
+        return reduce
+          || window.matchMedia('(max-width: 980px), (hover: none) and (pointer: coarse)').matches;
+      }
+
+      function finishCut(scrollToday) {
+        apply();
+        if (scrollToday) scrollToToday();
+      }
+
       function play(type, morphKey, scrollToday) {
-        var update = function () { apply(); };
-        if (reduce || typeof document.startViewTransition !== 'function') {
-          update();
-          if (scrollToday) scrollToToday();
+        if (cutMotion() || typeof document.startViewTransition !== 'function') {
+          finishCut(scrollToday);
+          return;
+        }
+        if (currentTransition) {
+          try { currentTransition.skipTransition(); } catch (error) {}
+          currentTransition = null;
+          finishCut(scrollToday);
           return;
         }
         if (morphKey) tag(morphKey);
         var callback = function () {
-          update();
+          apply();
           if (morphKey) tag(morphKey);
         };
         var transition;
@@ -429,9 +530,17 @@ const description =
             ? document.startViewTransition({ update: callback, types: [type] })
             : document.startViewTransition(callback);
         } catch (error) {
-          transition = document.startViewTransition(callback);
+          tag(null);
+          finishCut(scrollToday);
+          return;
         }
+        currentTransition = transition;
+        var watchdog = window.setTimeout(function () {
+          try { transition.skipTransition(); } catch (error) {}
+        }, 480);
         transition.finished.finally(function () {
+          window.clearTimeout(watchdog);
+          if (currentTransition === transition) currentTransition = null;
           tag(null);
           if (scrollToday) scrollToToday();
         });
@@ -443,7 +552,7 @@ const description =
         play(type, morphKey, scrollToday);
       }
 
-      document.querySelectorAll('[data-step], [data-vista-toggle], [data-filter], [data-formato], [data-tipo-filter], [data-empty-jump]').forEach(function (link) {
+      document.querySelectorAll('[data-step], [data-vista-toggle], [data-filter], [data-formato], [data-empty-jump]').forEach(function (link) {
         link.addEventListener('click', function (event) {
           if (link.getAttribute('aria-disabled') === 'true') {
             event.preventDefault();
@@ -453,7 +562,7 @@ const description =
           if (url.origin !== location.origin) return;
           event.preventDefault();
           var state = read();
-          if (link.hasAttribute('data-filter') || link.hasAttribute('data-formato') || link.hasAttribute('data-tipo-filter') || link.hasAttribute('data-empty-jump')) {
+          if (link.hasAttribute('data-filter') || link.hasAttribute('data-formato') || link.hasAttribute('data-empty-jump')) {
             history.pushState(null, '', url.pathname + url.search);
             apply();
             return;
@@ -470,34 +579,116 @@ const description =
       var board = document.querySelector('.months');
       if (board) {
         board.addEventListener('click', function (event) {
-          var chip = event.target.closest('[data-event-id]');
-          if (chip && !page.classList.contains('is-year')) {
-            var card = document.getElementById(chip.getAttribute('data-event-id') || '');
+          if (!page.classList.contains('is-year')) {
+            var day = event.target.closest('.day[data-date]');
+            if (!day || day.closest('.month-block[hidden]')) return;
+            var chip = event.target.closest('[data-event-id]');
+            var date = day.getAttribute('data-date') || '';
+            var picking = read();
+            var params = new URLSearchParams(location.search);
+            var card = chip ? document.getElementById(chip.getAttribute('data-event-id') || '') : null;
             if (card && card.hidden) {
-              event.preventDefault();
-              var status = card.getAttribute('data-status');
-              if (status === 'proximos' || status === 'live' || status === 'pasados') {
-                var params = new URLSearchParams(location.search);
-                params.set('estado', status);
-                params.set('vista', 'mes');
-                var cardTipo = card.getAttribute('data-tipo') || '';
-                var currentTipo = read().tipo;
-                if (currentTipo !== 'todos' && cardTipo && currentTipo !== cardTipo) {
-                  params.set('tipo', cardTipo);
-                }
-                history.pushState(null, '', location.pathname + '?' + params.toString());
-                apply();
-                if (!card.hidden) card.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
-              }
+              var cardTipo = card.getAttribute('data-tipo') || '';
+              if (picking.tipo !== 'todos' && cardTipo && picking.tipo !== cardTipo) params.set('tipo', cardTipo);
+            }
+            if (!chip && picking.dia === date) params.delete('dia');
+            else params.set('dia', date);
+            event.preventDefault();
+            history.pushState(null, '', location.pathname + '?' + params.toString());
+            apply();
+            if (card && !card.hidden) card.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+            else if (params.get('dia')) {
+              var list = document.querySelector('.register-section');
+              if (list) list.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
             }
             return;
           }
-          if (!page.classList.contains('is-year')) return;
           var block = event.target.closest('[data-month-key]');
           if (!block) return;
           event.preventDefault();
           var key = block.getAttribute('data-month-key');
           go(linkTo(read(), { vista: 'mes', mes: key }), 'zoom-in', key, false);
+        });
+      }
+
+      function chooseTipo(nextTipo) {
+        var params = new URLSearchParams(location.search);
+        if (validTipos.indexOf(nextTipo) === -1) {
+          nextTipo = 'todos';
+          params.delete('tipo');
+        } else params.set('tipo', nextTipo);
+        try {
+          var stored = loadPrefs();
+          stored.tipo = nextTipo;
+          localStorage.setItem('eventos-tech-puebla', JSON.stringify(stored));
+        } catch (error) {}
+        history.pushState(null, '', location.pathname + '?' + params.toString());
+        closeTipoMenu();
+        apply();
+      }
+
+      function closeTipoMenu() {
+        var menu = document.querySelector('[data-tipo-menu]');
+        var list = document.querySelector('.type-list');
+        var trigger = document.querySelector('[data-tipo-trigger]');
+        if (menu) menu.classList.remove('is-open');
+        if (list) list.hidden = true;
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      }
+
+      var tipoTrigger = document.querySelector('[data-tipo-trigger]');
+      if (tipoTrigger) {
+        tipoTrigger.addEventListener('click', function () {
+          var menu = document.querySelector('[data-tipo-menu]');
+          var list = document.querySelector('.type-list');
+          var open = tipoTrigger.getAttribute('aria-expanded') === 'true';
+          if (open) closeTipoMenu();
+          else {
+            if (menu) menu.classList.add('is-open');
+            if (list) list.hidden = false;
+            tipoTrigger.setAttribute('aria-expanded', 'true');
+          }
+        });
+      }
+
+      document.querySelectorAll('[data-tipo-option]').forEach(function (option) {
+        option.addEventListener('click', function () {
+          chooseTipo(option.getAttribute('data-tipo-option'));
+        });
+      });
+
+      document.addEventListener('click', function (event) {
+        var menu = document.querySelector('[data-tipo-menu]');
+        if (!menu || !menu.classList.contains('is-open')) return;
+        if (!menu.contains(event.target)) closeTipoMenu();
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeTipoMenu();
+      });
+
+      var tipoPillButton = document.querySelector('[data-tipo-pill]');
+      if (tipoPillButton) {
+        tipoPillButton.addEventListener('click', function () {
+          var params = new URLSearchParams(location.search);
+          params.delete('tipo');
+          try {
+            var stored = loadPrefs();
+            stored.tipo = 'todos';
+            localStorage.setItem('eventos-tech-puebla', JSON.stringify(stored));
+          } catch (error) {}
+          history.pushState(null, '', location.pathname + '?' + params.toString());
+          apply();
+        });
+      }
+
+      var dayClearButton = document.querySelector('[data-day-clear]');
+      if (dayClearButton) {
+        dayClearButton.addEventListener('click', function () {
+          var params = new URLSearchParams(location.search);
+          params.delete('dia');
+          history.pushState(null, '', location.pathname + '?' + params.toString());
+          apply();
         });
       }
 
