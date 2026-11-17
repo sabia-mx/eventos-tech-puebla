@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { title, description, timezone } = Astro.props;
-const origin = 'https://eventostechpuebla.com';
+const origin = Astro.site?.origin ?? 'https://eventos-tech-puebla.vercel.app';
 const site = `${origin}/`;
 const image = `${origin}/og.jpg`;
 ---

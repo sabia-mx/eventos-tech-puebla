@@ -1,8 +1,6 @@
 import type { APIRoute } from 'astro';
 import { loadEvents } from '../lib/events';
 
-const origin = 'https://eventostechpuebla.com';
-
 const labels: Record<string, string> = {
   conferencia: 'Conferencia',
   hackaton: 'Hackatón',
@@ -12,7 +10,8 @@ const labels: Record<string, string> = {
   feria: 'Expo',
 };
 
-export const GET: APIRoute = () => {
+export const GET: APIRoute = ({ site }) => {
+  const origin = site?.origin ?? 'https://eventos-tech-puebla.vercel.app';
   const { events, timezone } = loadEvents();
   const body = [
     '# Eventos tech en Puebla',

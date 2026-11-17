@@ -1,8 +1,7 @@
 import type { APIRoute } from 'astro';
 
-const origin = 'https://eventostechpuebla.com';
-
-export const GET: APIRoute = () => {
+export const GET: APIRoute = ({ site }) => {
+  const origin = site?.origin ?? 'https://eventos-tech-puebla.vercel.app';
   const body = [
     'User-agent: *',
     'Allow: /',
