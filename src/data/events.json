@@ -253,6 +253,23 @@
       "imageFit": "contain"
     },
     {
+      "id": "c4gad4s-tech",
+      "tipo": "meetup",
+      "title": "C4gad4s Tech",
+      "chip": "C4gad4s",
+      "color": "#c8960c",
+      "organizer": "C4gad4s Tech",
+      "start": "2026-11-26T18:30:00-06:00",
+      "end": "2026-11-26T21:30:00-06:00",
+      "dateLabel": "Jueves 26 noviembre",
+      "timeLabel": "18:30",
+      "venue": "Workósfera, Calle Cholula 35, Col. La Paz, Puebla",
+      "detail": "Tus peores equivocaciones con tech. Ven a escuchar o a contar la tuya",
+      "url": "https://teams.microsoft.com/meet/2425071435535990?p=Rekyng8xlwyOn6LyCd",
+      "image": "/eventos/c4gad4s-tech.webp",
+      "imageFit": "contain"
+    },
+    {
       "id": "netconf-puebla",
       "tipo": "conferencia",
       "title": ".NET Conf 2026 Puebla",
