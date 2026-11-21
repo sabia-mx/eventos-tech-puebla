@@ -23,6 +23,7 @@ export const GET: APIRoute = ({ site }) => {
     '## Página',
     '',
     `- [Eventos tech en Puebla](${origin}/): calendario, fichas y enlaces de registro.`,
+    `- [Calendario](${origin}/calendario.ics): los mismos eventos en un archivo para Google Calendar, Outlook o Apple Calendar.`,
     '',
     '## Eventos',
     '',

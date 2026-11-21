@@ -57,7 +57,6 @@ const style = `--accent:${event.paint.accent};--accent-ink:${event.paint.accentI
             Registrarme
             <span class="sr-only"> en {event.title}, se abre en otra pestaña</span>
           </a>
-          {event.qr ? <div class="qr" aria-hidden="true" set:html={event.qr} /> : null}
         </div>
       ) : (
         <p class="pending">Enlace por confirmar</p>

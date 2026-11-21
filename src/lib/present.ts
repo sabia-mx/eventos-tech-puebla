@@ -1,10 +1,8 @@
 import { paintFor, type AccentPaint } from './color';
-import { qrSvg } from './qr';
 import type { EventRecord } from './types';
 
 export interface PresentedEvent extends EventRecord {
   number: number;
-  qr: string | null;
   showDetail: boolean;
   paint: AccentPaint;
 }
@@ -31,7 +29,6 @@ export async function presentEvents(events: EventRecord[]): Promise<PresentedEve
         ...event,
         url,
         number: index + 1,
-        qr: url ? await qrSvg(url, paint.accentInk) : null,
         showDetail: shouldShowDetail(event),
         paint,
       };

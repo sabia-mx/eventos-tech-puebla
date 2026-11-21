@@ -76,9 +76,7 @@ const description =
     </div>
 
     <section class="register-section" id="registro" aria-labelledby="registro-title">
-      <div class="section-head">
-        <h2 id="registro-title">ESCANEA Y REGÍSTRATE</h2>
-      </div>
+      <h2 id="registro-title" class="sr-only">Regístrate</h2>
       <div class="list-tools">
         <button type="button" class="day-clear" data-day-clear hidden>Quitar día</button>
         <nav class="filters" aria-label="Filtrar por momento">
@@ -88,8 +86,8 @@ const description =
         </nav>
         <div class="type-row">
           <div class="type-menu" data-tipo-menu>
-            <button type="button" class="type-trigger" data-tipo-trigger aria-expanded="false" aria-controls="tipo-list">
-              Tipo de evento
+            <button type="button" class="type-trigger" data-tipo-trigger aria-expanded="false" aria-controls="tipo-list" aria-label="Tipo de evento">
+              Tipo
               <span class="type-chevron" aria-hidden="true" set:html={chevronIcon} />
             </button>
             <div class="type-list" id="tipo-list" role="listbox" aria-label="Tipo de evento" aria-multiselectable="true" hidden>
@@ -105,11 +103,11 @@ const description =
           <nav class="view-toggle" aria-label="Forma de las tarjetas">
             <a href="?formato=cartel" data-formato="cartel">
               <span class="view-icon" aria-hidden="true" set:html={gridIcon} />
-              Cartel
+              <span class="sr-only">Cartel</span>
             </a>
             <a href="?formato=lista" data-formato="lista">
               <span class="view-icon" aria-hidden="true" set:html={listIcon} />
-              Lista
+              <span class="sr-only">Lista</span>
             </a>
           </nav>
         </div>
@@ -132,6 +130,7 @@ const description =
 
     <footer class="colophon">
       <p data-count>{events.length} encuentros para conectar, aprender y construir. Horarios CDMX · UTC−6.</p>
+      <p><a href="/calendario.ics">Agregar a mi calendario</a></p>
     </footer>
   </main>
   <noscript>
