@@ -1138,16 +1138,13 @@ html.agenda-booting .cards {
 }
 
 .pending {
-  display: grid;
-  place-items: center;
-  min-height: 8.5rem;
-  margin-top: 0.95rem;
-  padding: 1rem;
-  border: 1px dashed color-mix(in srgb, var(--accent) 72%, var(--ink));
-  border-radius: 12px;
-  color: var(--accent-ink);
+  margin: 0.85rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
   font-weight: 700;
-  text-align: center;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .card::after {
@@ -1354,7 +1351,8 @@ html.agenda-booting .cards {
 }
 
 .page.is-lista .pending {
-  display: none;
+  margin-top: 0.45rem;
+  font-size: 0.62rem;
 }
 
 @container day (max-width: 4.5rem) {

@@ -287,6 +287,23 @@
       "imageFit": "cover"
     },
     {
+      "id": "ciencia-en-el-bar",
+      "tipo": "conferencia",
+      "title": "Ciencia en el Bar Puebla · Sesión X",
+      "chip": "Bar",
+      "color": "#c026d3",
+      "organizer": "Prometheus Project",
+      "start": "2026-11-27T18:30:00-06:00",
+      "end": "2026-11-27T21:00:00-06:00",
+      "dateLabel": "Viernes 27 noviembre",
+      "timeLabel": "18:30",
+      "venue": "Demiurgo Foro Cultural, C. 29 Sur 720, Col. La Paz",
+      "detail": "Sensores electrónicos para medir nuestra salud y otros datos. Dra. Daniela Díaz Alonso, INAOE. Entrada libre",
+      "url": null,
+      "image": "/eventos/ciencia-en-el-bar.webp",
+      "imageFit": "contain"
+    },
+    {
       "id": "netconf-puebla",
       "tipo": "conferencia",
       "title": ".NET Conf 2026 Puebla",
