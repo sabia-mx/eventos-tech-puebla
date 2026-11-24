@@ -384,7 +384,7 @@ const description =
           if (chip.getAttribute('data-status') !== chipStatus) chip.setAttribute('data-status', chipStatus);
           if (chipStatus === 'live') {
             var day = chip.closest('.day');
-            if (day) day.classList.add('is-live');
+            if (day && day.classList.contains('is-today')) day.classList.add('is-live');
           }
         }
 

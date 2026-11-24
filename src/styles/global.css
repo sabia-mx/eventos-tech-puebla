@@ -482,6 +482,17 @@ body {
   display: block;
 }
 
+.day.is-today.has-event {
+  position: relative;
+}
+
+.day.is-today.has-event .hoy-mark {
+  position: absolute;
+  top: 0.32rem;
+  right: 0.16rem;
+  margin-top: 0;
+}
+
 .chips {
   display: flex;
   flex-direction: column;
@@ -995,6 +1006,10 @@ body {
   animation: live-chip 1.25s ease-out infinite;
 }
 
+.chip.is-run[data-status='live'] {
+  animation: none;
+}
+
 .chip[data-status='live']::before {
   content: '';
   flex: 0 0 auto;
@@ -1004,6 +1019,18 @@ body {
   background: #fff;
   box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.75);
   animation: live-dot 1.25s ease-out infinite;
+}
+
+.chip.is-run[data-status='live']::before {
+  content: none;
+}
+
+.day.is-today .chip.is-run[data-status='live'] {
+  animation: live-chip 1.25s ease-out infinite;
+}
+
+.day.is-today .chip.is-run[data-status='live']::before {
+  content: '';
 }
 
 .page.is-mes .day.is-live {
